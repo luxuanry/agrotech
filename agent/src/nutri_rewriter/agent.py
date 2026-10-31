@@ -1,8 +1,8 @@
 """Agent loop: score -> rewrite -> re-score, until the Nutri-Score is A or B or out of rounds.
 
-A recipe is a list of items {"name": str, "grams": float}. Each ingredient's composition
-per 100 g comes from the Ciqual table (see ciqual.py), with an LLM estimate only when no
-Ciqual food matches; nutrition and the Nutri-Score are computed in nutriscore.py, never
+A recipe is a list of items {"name": str, "grams": float}. The LLM gives each
+ingredient's composition per 100 g (with the original recipe, and alongside every
+rewritten recipe); nutrition and the Nutri-Score are computed in nutriscore.py, never
 by the LLM.
 """
 
@@ -13,7 +13,6 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from . import nutriscore
-from .ciqual import Ciqual
 from .llm import IngredientRewriter
 
 _GRAMS_RE = re.compile(r"\s*(\d+(?:[.,]\d+)?)\s*g\.?\s*$", re.IGNORECASE)
@@ -80,48 +79,21 @@ class Result:
     attempts: list[Attempt]
 
 
-_TABLE: Ciqual | None = None
-
-
-def table() -> Ciqual:
-    global _TABLE
-    if _TABLE is None:
-        _TABLE = Ciqual()
-    return _TABLE
-
-
-def resolve_compositions(names: list[str], compositions: dict, rewriter: IngredientRewriter) -> None:
-    """Find a composition for each name not yet in `compositions` (keyed by nutriscore.key).
-
-    The LLM translates the names into Ciqual search terms, the table is searched, and
-    the LLM picks the matching food; the values then come from the table. Ingredients
-    with no matching food (additives, isolates, premixes) get an LLM estimate, marked as such.
-    """
-    missing = list(dict.fromkeys(n for n in names if nutriscore.key(n) not in compositions))
-    if not missing:
-        return
-    ciqual = table()
-    queries = rewriter.translate(missing)
-    candidates = {n: ciqual.search(queries.get(nutriscore.key(n), []) + [n]) for n in missing}
-
-    for _ in range(2):  # a second try for entries the LLM skipped
-        todo = {n: c for n, c in candidates.items() if nutriscore.key(n) not in compositions}
-        if not todo:
+def fill_compositions(names: list[str], compositions: dict, rewriter: IngredientRewriter) -> None:
+    """Ask the LLM for the compositions still missing from `compositions` (two tries)."""
+    for _ in range(2):
+        missing = list(dict.fromkeys(n for n in names if nutriscore.key(n) not in compositions))
+        if not missing:
             return
-        for k, pick in rewriter.choose(todo).items():
-            if pick["code"] in ciqual.by_code:
-                compositions[k] = ciqual.composition(pick["code"])
-            elif pick["per_100g"]:
-                compositions[k] = {**pick["per_100g"], "source": {"type": "llm"}}
-
-    still = [n for n in missing if nutriscore.key(n) not in compositions]
+        compositions.update(rewriter.estimate(missing))
+    still = [n for n in names if nutriscore.key(n) not in compositions]
     if still:
-        raise ValueError("Could not find a composition for: " + ", ".join(still))
+        raise ValueError("No composition for: " + ", ".join(still))
 
 
 def _attempt(rnd: int, items: list[dict], compositions: dict, category: str, changes: list[str]) -> Attempt:
     n, s = nutriscore.evaluate(items, compositions, category)
-    shown = [{**i, "source": compositions[nutriscore.key(i["name"])]["source"]} for i in items]
+    shown = [{**i, "per_100g": compositions[nutriscore.key(i["name"])]} for i in items]
     return Attempt(rnd, format_items(items), s["score"], s["grade"], shown, n, s, changes)
 
 
@@ -140,7 +112,7 @@ def run(
         raise ValueError("The recipe is empty.")
 
     compositions: dict[str, dict] = {}
-    resolve_compositions([i["name"] for i in items], compositions, rewriter)
+    fill_compositions([i["name"] for i in items], compositions, rewriter)
 
     original = _attempt(0, items, compositions, category, [])
     on_attempt(original)
@@ -158,8 +130,13 @@ def run(
             new_items = clean_items(proposal["items"])
             if not new_items:
                 raise ValueError("The LLM returned an empty recipe.")
-            # Only new ingredients are looked up; known ones keep their composition for the whole run.
-            resolve_compositions([i["name"] for i in new_items], compositions, rewriter)
+            # New ingredients take the composition the LLM returned with the recipe. Known ones keep
+            # their first values, so a round can't improve its score by re-estimating a kept ingredient.
+            for raw in proposal["items"]:
+                k = nutriscore.key(raw["name"])
+                if raw["per_100g"] and k not in compositions:
+                    compositions[k] = raw["per_100g"]
+            fill_compositions([i["name"] for i in new_items], compositions, rewriter)  # any it left out
         except Exception as e:  # bad JSON / API hiccup / missing amounts: skip this round
             on_error(rnd, e)
             continue

@@ -77,16 +77,15 @@ function points(before, after) {
   return `${d > 0 ? "+" : d < 0 ? "−" : "±"}${Math.abs(d)} point${Math.abs(d) === 1 ? "" : "s"}`;
 }
 
-// Where an ingredient's values per 100 g came from: the Ciqual table, or an LLM estimate when nothing matched.
-function Source({ source }) {
-  if (!source) return null;
-  if (source.type === "ciqual")
-    return (
-      <span className="agent-source" title={`Anses Ciqual (CALNUT 2020), food code ${source.code}`}>
-        <span className="agent-source-tag">Ciqual {source.code}</span> {source.name}
-      </span>
-    );
-  return <span className="agent-source agent-source-llm">LLM estimate, no Ciqual match</span>;
+// The LLM's composition for one ingredient, per 100 g of that ingredient.
+function Composition({ c }) {
+  if (!c) return null;
+  return (
+    <span className="agent-composition">
+      {fmt(c.kcal, 0)} kcal · sugars {fmt(c.sugars, 1)} · sat. fat {fmt(c.sat_fat, 1)} · salt {fmt(c.salt, 2)} · fibre{" "}
+      {fmt(c.fibre, 1)} · protein {fmt(c.protein, 1)}
+    </span>
+  );
 }
 
 function RecipeTable({ items, original }) {
@@ -100,7 +99,7 @@ function RecipeTable({ items, original }) {
     }),
     ...original
       .filter((i) => !after.has(norm(i.name)))
-      .map((i) => ({ name: i.name, grams: null, was: i.grams, status: "removed", source: i.source })),
+      .map((i) => ({ name: i.name, grams: null, was: i.grams, status: "removed", per_100g: i.per_100g })),
   ];
   const LABEL = { new: "New", amount: "Amount changed", kept: "Kept", removed: "Removed" };
   return (
@@ -111,7 +110,7 @@ function RecipeTable({ items, original }) {
             <th scope="col">Ingredient</th>
             <th scope="col" className="num">Amount</th>
             <th scope="col">Compared with the original</th>
-            <th scope="col">Composition data</th>
+            <th scope="col">Per 100 g of ingredient (g)</th>
           </tr>
         </thead>
         <tbody>
@@ -124,7 +123,7 @@ function RecipeTable({ items, original }) {
                 {(r.status === "amount" || r.status === "removed") && <span className="muted small"> was {fmtG(r.was)}</span>}
               </td>
               <td className="small">
-                <Source source={r.source} />
+                <Composition c={r.per_100g} />
               </td>
             </tr>
           ))}
@@ -264,11 +263,10 @@ function ScoreMeaning({ result }) {
         <div>
           <dt>Limits</dt>
           <dd>
-            Each ingredient's composition per 100 g comes from the Anses Ciqual table (CALNUT 2020): the LLM translates
-            the name into Ciqual's wording and picks the matching food, and the values come from the table. Ingredients
-            with no matching food, such as additives or protein isolates, use an LLM estimate and are marked as such. The
-            Nutri-Score is then calculated from those values and the grams. Drinks are assumed to weigh 1 g per ml. It is
-            not a lab analysis or an official Nutri-Score, and it does not check stability, taste or regulation.
+            The LLM gives each ingredient's composition per 100 g, and the Nutri-Score is calculated in code from those
+            values and the grams. An ingredient keeps its first values for the whole run. Drinks are assumed to weigh 1 g
+            per ml. The values are estimates, not a lab analysis or an official Nutri-Score, and the agent does not check
+            stability, taste or regulation.
           </dd>
         </div>
       </dl>
@@ -515,7 +513,7 @@ export default function AgentView() {
         {running && (
           <p className="agent-progress">
             <span className="agent-spinner" aria-hidden="true" />
-            {attempts.length ? `Round ${roundsDone + 1} of ${maxRounds}…` : "Looking up ingredients in Ciqual and scoring the original recipe…"}
+            {attempts.length ? `Round ${roundsDone + 1} of ${maxRounds}…` : "Estimating ingredient compositions and scoring the original recipe…"}
             {attempts[0] && (
               <span className="muted">
                 {" "}

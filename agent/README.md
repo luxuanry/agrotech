@@ -39,34 +39,26 @@ uv run nutri-rewriter-api      # http://127.0.0.1:8001 (AGENT_PORT to change), u
 ## How it works
 
 ```
-recipe (g) ──► composition per 100 g of each ingredient (once per ingredient)
-                 │   1. LLM translates the name into French Ciqual terms ("귀리" → "Flocon d'avoine")
-                 │   2. keyword search in the Ciqual table → candidate foods
-                 │   3. LLM picks the matching food → values from Ciqual
-                 │      (no match, e.g. additives or isolates → LLM estimate, marked as such)
+recipe (g) ──► LLM: composition per 100 g of each ingredient
+                 │
                  ▼
-           nutrition per 100 g ──► Nutri-Score A or B? ──yes──► done
-                 ▲                        │ no
-                 │                        ▼
-                 └── new recipe (g) ◄── Groq LLM (original, points and their main sources,
-                                         previous attempts)
+           nutrition per 100 g (code) ──► Nutri-Score A or B? ──yes──► done
+                 ▲                              │ no
+                 │                              ▼
+                 └── new recipe (g) + composition ◄── Groq LLM (original, points and their
+                     of each ingredient per 100 g       main sources, previous attempts)
                      (up to max-rounds; if never reached, return the lowest-scoring recipe)
 ```
 
 - `src/nutri_rewriter/nutriscore.py`: nutrition per 100 g from grams, Nutri-Score points and grade
-- `src/nutri_rewriter/ciqual.py`: Ciqual table and keyword search
-- `src/nutri_rewriter/llm.py`: Groq calls (translate, choose, rewrite) and prompts
+- `src/nutri_rewriter/llm.py`: Groq calls (composition estimate, rewrite) and prompts
 - `src/nutri_rewriter/agent.py`: the loop and attempt tracking
 
 ### Notes
 
-- Compositions come from the Anses Ciqual table (CALNUT 2020: Ciqual 2020 with missing
-  values filled in, 2,119 foods), stored in `src/nutri_rewriter/data/ciqual.json`.
-  Rebuild it with `uv run python scripts/build_ciqual.py`. Source: "Anses. 2020. Table de
-  composition nutritionnelle Ciqual pour le calcul des apports nutritionnels CALNUT."
-- The LLM never supplies a number for a matched ingredient and never computes the score.
-  Only ingredients with no Ciqual food get an LLM estimate; the web page and CLI show
-  the source of each ingredient.
+- The LLM supplies compositions per 100 g of ingredient (with every rewritten recipe,
+  and in a separate call for the original). It never computes the score: nutrition per
+  100 g and the Nutri-Score are calculated in `nutriscore.py` from those values and the grams.
 - An ingredient keeps its composition for the whole run, so a round cannot improve its
   score by re-estimating an ingredient it kept.
 - The LLM picks the grams of new or replacing ingredients and is told to keep the

@@ -11,6 +11,8 @@ own rules that are not implemented.
 
 from __future__ import annotations
 
+import re
+
 COMPOSITION_KEYS = ("kcal", "sugars", "sat_fat", "salt", "fibre", "protein")
 CATEGORIES = ("beverage", "food")
 TARGET_GRADES = ("A", "B")
@@ -44,6 +46,20 @@ _GRADES = {
 _WATER_NAMES = {"water", "eau", "wasser", "agua", "acqua", "물", "drinking water", "eau de source", "eau minérale"}
 
 
+# Non-nutritive sweeteners, so the beverage penalty applies even if the LLM forgets the flag.
+_SWEETENER_RE = re.compile(
+    r"stevi|steviol|rebaudios|sucralos|aspartam|acesulfam|saccharin|sacharin|cyclamat|neotam|advantam|thaumatin"
+    r"|monk ?fruit|luo han|mogrosid|e ?9(5[0-9]|6[0-9])\b"
+    r"|스테비|스테비올|수크랄로스|아스파탐|아세설팜|아세술팜|사카린|사이클라메이트|네오탐|나한과|몽크\s?프루트"
+    r"|édulcorant|edulcorant|sweetener|감미료",
+    re.IGNORECASE,
+)
+
+
+def is_sweetener(name: str) -> bool:
+    return bool(_SWEETENER_RE.search(name))
+
+
 def _points(value: float, thresholds: list[float]) -> int:
     return sum(1 for t in thresholds if value > t)
 
@@ -65,7 +81,7 @@ def nutrition(items: list[dict], compositions: dict[str, dict]) -> dict:
             out[k] += share * comp[k]
         if comp["fvl"]:
             fvl_grams += i["grams"]
-        sweetener = sweetener or comp["sweetener"]
+        sweetener = sweetener or comp["sweetener"] or is_sweetener(i["name"])
     out = {k: round(v, 3) for k, v in out.items()}
     out["kj"] = round(out["kcal"] * 4.184, 1)
     out["fvl_pct"] = round(100 * fvl_grams / total, 1) if total else 0.0

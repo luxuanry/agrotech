@@ -1145,21 +1145,9 @@ table.compact {
 }
 
 
-/* Composition source per ingredient */
+/* LLM composition per ingredient */
 
-.agent-source-tag {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0 0.35rem;
-  margin-right: 0.25rem;
-  border-radius: 4px;
-  color: var(--green);
-  background: var(--green-tint);
-  white-space: nowrap;
-}
-
-.agent-source-llm {
-  color: var(--yellow);
-  font-style: italic;
+.agent-composition {
+  color: var(--muted);
+  font-size: 0.8rem;
 }

@@ -1,4 +1,4 @@
-"""Groq LLM: matches ingredients to the Ciqual table and proposes recipes with a better Nutri-Score."""
+"""Groq LLM: estimates ingredient compositions and proposes recipes with a better Nutri-Score."""
 
 from __future__ import annotations
 
@@ -15,47 +15,41 @@ _COMPOSITION_FIELDS = """"kcal": <energy>, "sugars": <g>, "sat_fat": <g saturate
 "fibre": <g>, "protein": <g>, "fvl": <true if it is a fruit, vegetable or legume (pulse)>, \
 "sweetener": <true if it is a non-nutritive sweetener such as sucralose or steviol glycosides>"""
 
-TRANSLATE_PROMPT = """You translate recipe ingredient names (any language) into search terms for the \
-French Ciqual food composition table. Ciqual names are French and start with the food, then details, \
-e.g. "Huile de tournesol", "Flocon d'avoine", "Porc, longe, crue", "Sel blanc alimentaire", \
-"Eau du robinet", "Pois chiche, bouilli/cuit à l'eau", "Sucre blanc". Think of the plain ingredient \
-as a manufacturer buys it (raw, unprepared), not a finished dish.
+_COMPOSITION_RULES = """Composition values are per 100 g of the ingredient itself (not of the product), \
+for the ingredient as a manufacturer buys it (raw, unprepared), as in standard food composition \
+tables (Ciqual, USDA). "sugars" means total sugars (mono- and disaccharides), not total \
+carbohydrates. "salt" is sodium chloride equivalent (sodium x 2.5). Water has no energy or \
+nutrients. Hydrocolloids and gums (gellan, xanthan, guar, carrageenan) are mostly fibre with almost \
+no protein or sugar; mineral salts and vitamin premixes have no energy. Set "sweetener" to true for \
+any non-nutritive sweetener, including stevia extracts."""
 
-For each ingredient give 1 to 3 short French search terms, the most likely first.
-Respond with JSON only, one entry per ingredient, names copied exactly as given:
-{"ingredients": [{"name": "<name>", "queries": ["<term>", ...]}, ...]}"""
-
-CHOOSE_PROMPT = f"""You match recipe ingredients to foods of the French Ciqual composition table. \
-For each ingredient you get numbered Ciqual candidates. Pick the candidate that is the same food as \
-the ingredient used in a recipe (raw rather than cooked, plain rather than a dish, unless the \
-ingredient says otherwise). A different form of the same food is fine (oat flakes for oats, white \
-sugar for sugar). A different food is never fine, even if the name looks alike: gelatine is not \
-gellan gum, whole peas are not pea protein isolate, apple juice is not apple purée.
-If no candidate is the same food (typically an additive, a protein isolate or a vitamin premix), set \
-"code" to null and instead give your best estimate of the ingredient's typical composition per 100 g \
-in "per_100g".
+ESTIMATE_PROMPT = f"""You are a food composition database. For each ingredient give its typical \
+composition. {_COMPOSITION_RULES}
 
 Respond with JSON only, one entry per ingredient, names copied exactly as given:
-{{"ingredients": [{{"name": "<name>", "code": <Ciqual code or null>, "per_100g": null or {{{_COMPOSITION_FIELDS}}}}}, ...]}}"""
+{{"ingredients": [{{"name": "<name>", {_COMPOSITION_FIELDS}}}, ...]}}"""
 
-REWRITE_PROMPT = """You are a food formulation expert. You change a recipe so that its Nutri-Score \
+REWRITE_PROMPT = f"""You are a food formulation expert. You change a recipe so that its Nutri-Score \
 (2023 algorithm) reaches A or B, while keeping it the same kind of product.
 
 Rules:
 - Work on what costs points (energy, sugars, saturated fat, salt, and sweeteners for drinks) and on \
 what earns points (protein, fibre, share of fruit, vegetables and legumes).
-- Keep the product recognisable and keep its core ingredient. Do not reach the target only by adding \
-water or by cutting the core ingredient drastically.
+- Keep the product recognisable: an oat drink stays an oat drink, a biscuit stays a biscuit. The core \
+ingredient (the largest one that is not water) keeps at least two thirds of its original amount, and \
+added ingredients must not take over what the product is. Do not reach the target only by adding water.
+- Non-nutritive sweeteners (stevia, sucralose, ...) cost points in drinks; don't use them to replace sugar.
 - Prefer whole-food or kitchen-style ingredients to additives.
 - Amounts are in grams. Keep the amount of an ingredient you don't change. For every new or \
 replacing ingredient, choose a realistic amount for this recipe. Keep the total weight close to the \
 original total.
-- Write names in the same language as the original, without amounts in the name. Use plain, \
-specific ingredient names (their composition is looked up in a food table). List ingredients in \
-descending order of weight, as on a label.
+- Write names in the same language as the original, without amounts in the name. Keep the exact \
+name of an ingredient you keep. List ingredients in descending order of weight, as on a label.
+- For every ingredient give its composition in "per_100g". {_COMPOSITION_RULES}
 
 Respond with JSON only:
-{"ingredients": [{"name": "<name>", "grams": <number>}, ...], "changes": ["<old> -> <new>", ...]}"""
+{{"ingredients": [{{"name": "<name>", "grams": <number>, "per_100g": {{{_COMPOSITION_FIELDS}}}}}, ...],
+"changes": ["<old> -> <new>", ...]}}"""
 
 def _fmt_items(items: list[dict]) -> str:
     return "\n".join(f"- {i['name']}: {i['grams']:g} g" for i in items)
@@ -129,27 +123,10 @@ class IngredientRewriter:
                 out.setdefault(nutriscore.key(n), e)
         return out
 
-    def translate(self, names: list[str]) -> dict[str, list[str]]:
-        """French Ciqual search terms for each ingredient, keyed by nutriscore.key(name)."""
-        data = self._ask(TRANSLATE_PROMPT, "Ingredients:\n" + "\n".join(f"- {n}" for n in names), 0.1)
-        return {k: [str(q) for q in e.get("queries", []) if str(q).strip()] for k, e in self._by_name(data, names).items()}
-
-    def choose(self, candidates: dict[str, list[dict]]) -> dict[str, dict]:
-        """For {name: [ciqual foods]}, returns {key(name): {"code": int|None, "per_100g": dict|None}}."""
-        lines = []
-        for name, foods in candidates.items():
-            lines.append(f"Ingredient: {name}")
-            lines += [f"  {f['code']}: {f['name']} ({f['group']})" for f in foods] or ["  (no candidates)"]
-        data = self._ask(CHOOSE_PROMPT, "\n".join(lines), 0.1)
-        out = {}
-        for k, e in self._by_name(data, list(candidates)).items():
-            try:
-                code = int(e["code"]) if e.get("code") is not None else None
-            except (TypeError, ValueError):
-                code = None
-            per_100g = e.get("per_100g")
-            out[k] = {"code": code, "per_100g": nutriscore.clean_composition(per_100g) if isinstance(per_100g, dict) else None}
-        return out
+    def estimate(self, names: list[str]) -> dict[str, dict]:
+        """Composition per 100 g for each ingredient, keyed by nutriscore.key(name)."""
+        data = self._ask(ESTIMATE_PROMPT, "Ingredients:\n" + "\n".join(f"- {n}" for n in names), 0.1, effort="medium")
+        return {k: nutriscore.clean_composition(e) for k, e in self._by_name(data, names).items()}
 
     def rewrite(
         self,
@@ -182,7 +159,11 @@ class IngredientRewriter:
 
         data = self._ask(REWRITE_PROMPT, "\n".join(lines), self.temperature, effort="medium")
         items = [
-            {"name": str(e.get("name") or "").strip(), "grams": e.get("grams")}
+            {
+                "name": str(e.get("name") or "").strip(),
+                "grams": e.get("grams"),
+                "per_100g": nutriscore.clean_composition(e["per_100g"]) if isinstance(e.get("per_100g"), dict) else None,
+            }
             for e in data.get("ingredients", [])
             if isinstance(e, dict)
         ]

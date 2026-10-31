@@ -46,9 +46,11 @@ def main() -> None:
             f"salt {n['salt']:.2f} g, fibre {n['fibre']:.1f} g, protein {n['protein']:.1f} g"
         )
         for i in a.items:
-            src = i["source"]
-            where = f"Ciqual {src['code']} {src['name']}" if src["type"] == "ciqual" else "LLM estimate (no Ciqual match)"
-            print(f"    {i['name']:<28} {i['grams']:>8g} g   {where}")
+            c = i["per_100g"]
+            print(
+                f"    {i['name']:<24} {i['grams']:>8g} g   per 100 g: {c['kcal']:g} kcal, sugars {c['sugars']:g}, "
+                f"sat. fat {c['sat_fat']:g}, salt {c['salt']:g}, fibre {c['fibre']:g}, protein {c['protein']:g}"
+            )
         for c in a.changes:
             print(f"    · {c}")
 
