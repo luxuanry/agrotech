@@ -3,11 +3,13 @@ import { api } from "./api.js";
 import CheckView from "./views/CheckView.jsx";
 import RecommendView from "./views/RecommendView.jsx";
 import ValidationView from "./views/ValidationView.jsx";
+import AgentView from "./views/AgentView.jsx";
 
 const TABS = [
   ["recommend", "Recommend"],
   ["check", "Check a formula"],
   ["validation", "Validation"],
+  ["agent", "Agent"],
 ];
 
 function initialTab() {
@@ -44,14 +46,14 @@ export default function App() {
         </nav>
       </header>
 
-      {meta?.data.is_sample && (
+      {meta?.data.is_sample && tab !== "agent" && (
         <p className="sample-banner">
           Sample data: these {meta.data.n_products} products are invented for development. Build the real table with <code>scripts/build_from_off.py</code>.
         </p>
       )}
 
       <main>
-        {error && (
+        {error && tab !== "agent" && (
           <div className="alert page-pad" role="alert">
             Cannot reach the API ({error}). Start it with <code>uvicorn app.main:app --port 8000</code> in the backend folder.
           </div>
@@ -59,6 +61,7 @@ export default function App() {
         {meta && tab === "recommend" && <RecommendView meta={meta} />}
         {meta && tab === "check" && <CheckView meta={meta} />}
         {meta && tab === "validation" && <ValidationView />}
+        {tab === "agent" && <AgentView />}
       </main>
 
       {meta && (

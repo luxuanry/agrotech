@@ -25,6 +25,17 @@ uv run nova-rewriter "..." --json          # print the result as JSON
 uv run nova-rewriter "..." --score-only    # classify only (no Groq key needed)
 ```
 
+## Web API (Agent tab)
+
+```bash
+uv run nova-rewriter-api      # http://127.0.0.1:8001 (AGENT_PORT to change), used by the web Agent tab
+```
+
+- `GET /agent-api/health`: classifier loaded, Groq key set, model id
+- `POST /agent-api/rewrite`: `{ "ingredients": "...", "threshold": 0.5, "max_rounds": 5 }`.
+  Streams NDJSON: one `attempt` per round (`round_error` when the LLM call fails), then
+  `result`, with P(NOVA 1..4) for the original and the best list.
+
 ## How it works
 
 ```

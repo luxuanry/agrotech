@@ -33,6 +33,7 @@ def run(
     threshold: float = 0.5,
     max_rounds: int = 5,
     on_attempt: Callable[[Attempt], None] = lambda a: None,
+    on_error: Callable[[int, Exception], None] = lambda rnd, e: print(f"  [round {rnd}] LLM error: {e}"),
 ) -> Result:
     s = classifier.score(ingredients)
     original = Attempt(0, ingredients, s.nova4, s.group)
@@ -54,7 +55,7 @@ def run(
                 hints,
             )
         except Exception as e:  # bad JSON / API hiccup: skip this round
-            print(f"  [round {rnd}] LLM error: {e}")
+            on_error(rnd, e)
             continue
         if not proposal["ingredients"]:
             continue

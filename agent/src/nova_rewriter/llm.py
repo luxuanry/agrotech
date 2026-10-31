@@ -7,7 +7,7 @@ import os
 
 from groq import Groq
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
 SYSTEM_PROMPT = """You are a food formulation expert. You rewrite a product's ingredient list so it is \
 no longer ultra-processed (NOVA group 4), while keeping it the same kind of product.

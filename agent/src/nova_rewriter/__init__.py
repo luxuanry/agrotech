@@ -21,7 +21,7 @@ def main() -> None:
     parser.add_argument("ingredients", nargs="?", help="ingredient list (reads stdin if omitted)")
     parser.add_argument("--threshold", type=float, default=0.5, help="target NOVA 4 probability (default 0.5)")
     parser.add_argument("--max-rounds", type=int, default=5, help="max LLM rewrite rounds (default 5)")
-    parser.add_argument("--model", default=None, help="Groq model id (default: $GROQ_MODEL or llama-3.3-70b-versatile)")
+    parser.add_argument("--model", default=None, help="Groq model id (default: $GROQ_MODEL or openai/gpt-oss-120b)")
     parser.add_argument("--score-only", action="store_true", help="only print NOVA probabilities")
     parser.add_argument("--json", action="store_true", help="print the result as JSON")
     args = parser.parse_args()
