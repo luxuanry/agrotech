@@ -1,0 +1,25 @@
+{
+  "_readme": "Draft hard-rule table. Every entry is verified=false until a team member checks it against the legal text. 'category' refers to Reg (EC) No 1333/2008 Annex II; 'organic' refers to Reg (EU) 2021/1165 Annex V Part A1. null means unknown: the UI shows it as 'to verify', never as a pass.",
+  "sources": {
+    "category": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02008R1333-20240722",
+    "organic": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021R1165",
+    "claims": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:02006R1924-20141213"
+  },
+  "additives": {
+    "E322": {"category": null, "organic": true,  "verified": false},
+    "E407": {"category": null, "organic": true,  "verified": false},
+    "E410": {"category": null, "organic": true,  "verified": false},
+    "E412": {"category": null, "organic": true,  "verified": false},
+    "E415": {"category": null, "organic": true,  "verified": false},
+    "E418": {"category": null, "organic": true,  "verified": false},
+    "E170": {"category": null, "organic": true,  "verified": false},
+    "E471": {"category": null, "organic": false, "verified": false},
+    "E466": {"category": null, "organic": false, "verified": false},
+    "E460": {"category": null, "organic": null,  "verified": false},
+    "E331": {"category": null, "organic": null,  "verified": false},
+    "E332": {"category": null, "organic": null,  "verified": false},
+    "E339": {"category": null, "organic": null,  "verified": false},
+    "E340": {"category": null, "organic": null,  "verified": false},
+    "E341": {"category": null, "organic": null,  "verified": false}
+  }
+}

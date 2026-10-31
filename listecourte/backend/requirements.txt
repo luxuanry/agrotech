@@ -1,0 +1,11 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+duckdb>=1.1
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5
+pyarrow>=17
+# Optional: per-product explanations of the M2 models (falls back to global importances).
+shap>=0.46
+# Optional: LLM explanations (M4). Needs ANTHROPIC_API_KEY; templates are used otherwise.
+# anthropic>=0.40
