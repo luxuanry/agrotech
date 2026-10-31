@@ -1,0 +1,24 @@
+[project]
+name = "nova-rewriter"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "BEAN4222", email = "nakevin004@naver.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "groq>=1.7.0",
+    "huggingface-hub>=2.4.0",
+    "joblib>=1.6.0",
+    "numpy>=2.5.4",
+    "python-dotenv>=1.2.4",
+    "scikit-learn==1.9.0",
+]
+
+[project.scripts]
+nova-rewriter = "nova_rewriter:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
