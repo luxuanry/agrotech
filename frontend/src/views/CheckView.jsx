@@ -9,6 +9,9 @@ const BASES = [
   ["almond", "Almond"],
   ["rice", "Rice"],
   ["coconut", "Coconut"],
+  ["hazelnut", "Hazelnut"],
+  ["spelt", "Spelt"],
+  ["cashew", "Cashew"],
 ];
 const DEFAULT_ROWS = [
   { id: "oat_hydrolysed", pct: "10" },

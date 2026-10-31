@@ -46,7 +46,14 @@ BASES: list[tuple[str, list[str]]] = [
     ("almond", ["amande", "almond"]),
     ("rice", ["riz", "rice"]),
     ("coconut", ["coco", "coconut"]),
+    ("hazelnut", ["noisette", "hazelnut"]),
+    ("spelt", ["épeautre", "epeautre", "spelt"]),
+    ("cashew", ["cajou", "cashew"]),
 ]
+
+# Products in the plant-milk category that are cooking ingredients, not drinks.
+_NOT_DRINK = ["lait de coco", "crème", "creme", "cuisine", "cooking", "cream"]
+_DRINK = ["boisson", "drink"]
 
 # Percentage right after a base keyword, e.g. "avoine 10%" or "avoine (12 %)".
 _PCT_AFTER = r"[^,;%]{0,40}?(\d{1,2}(?:[.,]\d)?)\s?%"
@@ -107,3 +114,14 @@ def has_vitamins(text: str | None) -> bool:
     """
     lowered = (text or "").lower()
     return "vitamine" in lowered or "vitamin" in lowered
+
+
+def is_drink(name: str | None) -> bool:
+    """False for coconut cooking milks, creams and other non-drinks.
+
+    An empty name (typed formula) counts as a drink.
+    """
+    lowered = (name or "").lower()
+    if any(k in lowered for k in _DRINK):
+        return True
+    return not any(k in lowered for k in _NOT_DRINK)

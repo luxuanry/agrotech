@@ -4,7 +4,7 @@ import IngredientStatement from "../components/IngredientStatement.jsx";
 import OptionRow from "../components/OptionRow.jsx";
 import Tag from "../components/Tag.jsx";
 
-const BASE_WORDS = { oat: "Oat", soy: "Soy", almond: "Almond", rice: "Rice", coconut: "Coconut", other: "Other base" };
+const BASE_WORDS = { oat: "Oat", soy: "Soy", almond: "Almond", rice: "Rice", coconut: "Coconut", hazelnut: "Hazelnut", spelt: "Spelt", cashew: "Cashew", other: "Other base" };
 const EMPTY_FORM = { name: "", ingredients_text: "", protein: "", fat: "", sugars: "", carbs: "", calcium_mg: "", barista: false, organic: false };
 
 function ProductSearch({ onPick }) {

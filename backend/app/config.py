@@ -26,6 +26,7 @@ RETAILER_BRANDS: list[str] = [
     "casino", "casino bio",
     "vemondo", "lidl",
     "franprix", "intermarché", "netto",
+    "leader price", "biocoop", "la vie claire", "naturalia", "nat&vie",
 ]
 
 # Traffic-light thresholds for market precedent (share of comparable

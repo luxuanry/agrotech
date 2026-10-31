@@ -28,6 +28,16 @@ npm run dev                                # http://localhost:5173, /api is prox
 
 ## Switch to real data
 
+Quickest route, the Open Food Facts search API (a few minutes, French plant drinks only):
+
+```bash
+cd backend && source .venv/bin/activate
+python scripts/fetch_from_off_api.py --dry-run   # product count per category tag
+python scripts/fetch_from_off_api.py             # writes data/products.parquet
+```
+
+Then restart the API. Alternative route, the full CSV export:
+
 1. Download the Open Food Facts CSV export:
    https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz
 2. Check which category tags French plant drinks use, and edit

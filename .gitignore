@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 backend/data/products.parquet
 *.csv.gz
+backend/data/off_cache/

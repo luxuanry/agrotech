@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from . import config
-from .additives import FUNCTIONS, base_percentage, detect_base, functions_of, has_vitamins, parse_additives
+from .additives import FUNCTIONS, base_percentage, detect_base, functions_of, has_vitamins, is_drink, parse_additives
 
 # Columns used for composition similarity ("clean twins").
 SIMILARITY_COLS = ["protein", "fat", "sugars", "salt", "base_pct"]
@@ -36,8 +36,9 @@ def _num(value) -> float | None:
 
 
 def _is_retailer_brand(brands: str | None) -> bool:
+    # "Carrefour France" and "Auchan Bio" should match "carrefour" and "auchan".
     parts = [b.strip().lower() for b in (brands or "").split(",")]
-    return any(p in config.RETAILER_BRANDS for p in parts)
+    return any(p == r or p.startswith(r + " ") for p in parts for r in config.RETAILER_BRANDS)
 
 
 def normalise(raw: pd.DataFrame) -> pd.DataFrame:
@@ -52,6 +53,8 @@ def normalise(raw: pd.DataFrame) -> pd.DataFrame:
     for rec in raw.to_dict("records"):
         text = rec.get("ingredients_text") or ""
         name = rec.get("product_name") or ""
+        if not is_drink(name):
+            continue
         additives = parse_additives(text, rec.get("additives_tags"))
         funcs = functions_of(additives)
         base = detect_base(text, name)

@@ -56,7 +56,7 @@ class IngredientIn(BaseModel):
 
 
 class CheckIn(BaseModel):
-    base: Literal["oat", "soy", "almond", "rice", "coconut", "other"]
+    base: Literal["oat", "soy", "almond", "rice", "coconut", "hazelnut", "spelt", "cashew", "other"]
     ingredients: list[IngredientIn]
     additives: list[str] = []
     barista: bool = False
