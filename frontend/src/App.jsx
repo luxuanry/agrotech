@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import { api } from "./api.js";
 import CheckView from "./views/CheckView.jsx";
 import RecommendView from "./views/RecommendView.jsx";
-import ValidationView from "./views/ValidationView.jsx";
 import AgentView from "./views/AgentView.jsx";
 
 const TABS = [
   ["recommend", "Recommend"],
   ["check", "Check a formula"],
-  ["validation", "Validation"],
   ["agent", "Agent"],
 ];
 
@@ -60,7 +58,6 @@ export default function App() {
         )}
         {meta && tab === "recommend" && <RecommendView meta={meta} />}
         {meta && tab === "check" && <CheckView meta={meta} />}
-        {meta && tab === "validation" && <ValidationView />}
         {tab === "agent" && <AgentView />}
       </main>
 
