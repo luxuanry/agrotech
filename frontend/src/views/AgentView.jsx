@@ -53,22 +53,6 @@ function ScoreBar({ score, threshold }) {
   );
 }
 
-function Distribution({ probs }) {
-  return (
-    <ul className="agent-dist">
-      {probs.map((p, i) => (
-        <li key={i}>
-          <span className="agent-dist-label">NOVA {i + 1}</span>
-          <div className="agent-dist-track">
-            <div className={`agent-dist-fill nova-fill-${i + 1}`} style={{ width: `${p * 100}%` }} />
-          </div>
-          <span className="agent-dist-value">{pct(p)}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function AmountsTable({ text, original }) {
   const before = new Map(splitIngredients(original).map((it) => [norm(parseIngredient(it).name), parseIngredient(it).amount]));
   const rows = splitIngredients(text).map((it) => {
@@ -389,10 +373,15 @@ export default function AgentView() {
                     <span className="small">Probability of NOVA 4</span>
                     <ScoreBar score={a.score} threshold={runThreshold} />
                     {i === 1 && <span className="agent-delta">{points(result.original.score, result.best.score)}</span>}
-                    {a.probs && <Distribution probs={a.probs} />}
                   </div>
                 ))}
               </div>
+              {result.best.changes?.length > 0 && (
+                <div className="agent-changed">
+                  <h3>What the agent changed</h3>
+                  <Changes changes={result.best.changes} />
+                </div>
+              )}
             </section>
 
             <section className="agent-section">
@@ -405,13 +394,6 @@ export default function AgentView() {
               <p className="statement agent-statement">{result.best.ingredients}</p>
               <AmountsTable text={result.best.ingredients} original={result.original.ingredients} />
             </section>
-
-            {result.best.changes?.length > 0 && (
-              <section className="agent-section">
-                <h3>What the agent changed</h3>
-                <Changes changes={result.best.changes} />
-              </section>
-            )}
 
             <ScoreMeaning result={result} threshold={runThreshold} />
           </div>

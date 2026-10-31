@@ -51,11 +51,6 @@ class RewriteIn(BaseModel):
     model: Optional[str] = None
 
 
-def _probs(text: str) -> list[float]:
-    """P(NOVA 1..4) for one list."""
-    return STATE["classifier"].score(text).probs
-
-
 @app.get("/agent-api/health")
 def health() -> dict:
     clf = STATE.get("classifier")
@@ -89,10 +84,7 @@ def rewrite(body: RewriteIn) -> StreamingResponse:
                 on_attempt=lambda a: events.put({"type": "attempt", "attempt": asdict(a)}),
                 on_error=lambda rnd, e: events.put({"type": "round_error", "round": rnd, "message": str(e)}),
             )
-            out = asdict(result)
-            out["original"]["probs"] = _probs(result.original.ingredients)
-            out["best"]["probs"] = _probs(result.best.ingredients)
-            events.put({"type": "result", "result": out})
+            events.put({"type": "result", "result": asdict(result)})
         except Exception as e:  # noqa: BLE001 - reported to the client
             events.put({"type": "error", "message": str(e)})
         finally:
