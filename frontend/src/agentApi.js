@@ -1,4 +1,4 @@
-// Client for the NOVA rewriter agent (agent/src/nova_rewriter/server.py), proxied at /agent-api.
+// Client for the Nutri-Score rewriter agent (agent/src/nutri_rewriter/server.py), proxied at /agent-api.
 
 async function errorMessage(res) {
   const body = await res.json().catch(() => ({}));
@@ -13,11 +13,11 @@ export async function agentHealth() {
 }
 
 // Runs the rewrite loop and calls onEvent for every NDJSON event as it arrives.
-export async function agentRewrite({ ingredients, threshold, maxRounds }, onEvent, signal) {
+export async function agentRewrite({ items, category, maxRounds }, onEvent, signal) {
   const res = await fetch("/agent-api/rewrite", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ingredients, threshold, max_rounds: maxRounds }),
+    body: JSON.stringify({ items, category, max_rounds: maxRounds }),
     signal,
   });
   if (!res.ok) throw new Error(await errorMessage(res));

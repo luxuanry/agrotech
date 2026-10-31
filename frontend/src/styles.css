@@ -211,6 +211,7 @@ legend {
 }
 
 input[type="search"],
+input[type="text"],
 input[type="number"],
 input:not([type]),
 select,
@@ -857,34 +858,64 @@ table.compact {
   padding: 0.4rem 0 0.6rem;
 }
 
-/* NOVA group badge: number and colour together, never colour alone */
+/* Nutri-Score: letter and colour together, never colour alone */
 
-.nova-badge {
+.ns-badge {
   display: inline-block;
   font-weight: 800;
   font-size: 0.8rem;
   padding: 0.1rem 0.5rem;
   border-radius: 4px;
-  border: 1px solid currentColor;
   white-space: nowrap;
+  color: var(--ns-ink);
+  background: var(--ns);
 }
 
-.nova-badge.nova-large {
-  font-size: 1.6rem;
-  font-stretch: 75%;
-  padding: 0.15rem 0.8rem;
+.ns-A { --ns: #038141; --ns-ink: #ffffff; }
+.ns-B { --ns: #85bb2f; --ns-ink: #17241d; }
+.ns-C { --ns: #fecb02; --ns-ink: #17241d; }
+.ns-D { --ns: #ee8100; --ns-ink: #17241d; }
+.ns-E { --ns: #e63e11; --ns-ink: #ffffff; }
+
+.ns-scale {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
 }
 
-.nova-1,
-.nova-2,
-.nova-3 {
-  color: var(--green);
-  background: var(--green-tint);
+.ns-letter {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2.3rem;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--ns-ink);
+  background: var(--ns);
+  opacity: 0.35;
 }
 
-.nova-4 {
-  color: var(--red);
-  background: var(--red-tint);
+.ns-letter:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.ns-letter:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.ns-letter.is-current {
+  opacity: 1;
+  width: 2.8rem;
+  height: 3.1rem;
+  margin: -0.35rem 0;
+  font-size: 1.7rem;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--ink);
+  position: relative;
+  z-index: 1;
 }
 
 /* Original vs rewritten */
@@ -909,9 +940,6 @@ table.compact {
   min-width: 0;
 }
 
-.agent-compare-col .agent-bar {
-  width: 100%;
-}
 
 .agent-changed {
   margin-top: 0.8rem;
@@ -927,52 +955,15 @@ table.compact {
   font-size: 0.92rem;
 }
 
-.agent-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  --bar: var(--red);
-}
 
-.agent-bar[data-pass="true"] {
-  --bar: var(--green);
-}
 
-.agent-bar-track {
-  position: relative;
-  flex: 1;
-  min-width: 5rem;
-  height: 0.55rem;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-}
 
-.agent-bar-fill {
-  height: 100%;
-  background: var(--bar);
-  border-radius: 999px;
-}
 
-.agent-bar-target {
-  position: absolute;
-  top: -0.3rem;
-  bottom: -0.3rem;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--ink);
-}
 
-.agent-bar-value {
-  font-weight: 700;
-  color: var(--bar);
-  min-width: 3.2rem;
-  text-align: right;
-}
 
 /* Amounts table and changes */
 
-.agent-table tr.row-new td:nth-child(2) {
+.agent-table tr.row-new td:first-child {
   font-weight: 600;
 }
 
@@ -997,6 +988,43 @@ table.compact {
 .status-kept {
   color: var(--muted);
   border: 1px solid var(--line);
+}
+
+.status-removed {
+  color: var(--red);
+  background: var(--red-tint);
+}
+
+.agent-table tr.row-removed td:first-child {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.agent-table tfoot th,
+.agent-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--line);
+}
+
+.pts-neg {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.pts-pos {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.agent-row-head {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.agent-row-head span:nth-child(2) {
+  text-align: right;
+  padding-right: 0.5rem;
 }
 
 .agent-changes {
@@ -1054,7 +1082,7 @@ table.compact {
 
 .agent-groups li {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: 7.5rem minmax(0, 1fr);
   align-items: baseline;
   gap: 0.6rem;
   padding: 0.2rem 0.4rem;
@@ -1116,7 +1144,22 @@ table.compact {
   gap: 0.5rem 1rem;
 }
 
-.agent-round-head .agent-bar {
-  flex: 1;
-  max-width: 18rem;
+
+/* Composition source per ingredient */
+
+.agent-source-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0 0.35rem;
+  margin-right: 0.25rem;
+  border-radius: 4px;
+  color: var(--green);
+  background: var(--green-tint);
+  white-space: nowrap;
+}
+
+.agent-source-llm {
+  color: var(--yellow);
+  font-style: italic;
 }

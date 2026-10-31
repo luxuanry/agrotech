@@ -32,13 +32,13 @@ Agent tab (optional, a third terminal, Python 3.12 + [uv](https://docs.astral.sh
 cd agent
 uv sync
 cp .env.example .env                       # set GROQ_API_KEY
-uv run nova-rewriter-api                   # http://127.0.0.1:8001, /agent-api is proxied to it
+uv run nutri-rewriter-api                  # http://127.0.0.1:8001, /agent-api is proxied to it
 ```
 
-The **Agent** tab takes an ingredient list, lets the NOVA rewriter agent rewrite it
-with a Groq LLM until the NOVA classifier no longer rates it ultra-processed, and
-shows the rewritten ingredients and amounts, the NOVA score before and after, and
-what the score means. It is independent of the backend: the other tabs work without
+The **Agent** tab takes a recipe in grams, lets the Nutri-Score rewriter agent change it
+with a Groq LLM until the recipe reaches Nutri-Score B or better, and shows the
+rewritten recipe in grams, the nutrition and Nutri-Score before and after, and what
+the score means. It is independent of the backend: the other tabs work without
 it, and it works without the backend. See `agent/README.md`.
 
 ## Switch to real data
@@ -83,7 +83,7 @@ Then restart the API. Alternative route, the full CSV export:
 | Recommend / Check / backtest | `app/service.py` |
 | API | `app/main.py` |
 | Interface | `frontend/src` |
-| Agent tab (NOVA rewriter) | `agent/src/nova_rewriter`, `frontend/src/views/AgentView.jsx` |
+| Agent tab (Nutri-Score rewriter) | `agent/src/nutri_rewriter`, `frontend/src/views/AgentView.jsx` |
 
 Optional LLM explanations: `pip install anthropic`, set `ANTHROPIC_API_KEY`.
 The LLM rewrites the template text from the evidence only; it never changes a light.
